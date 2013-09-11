@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+	Does all the packing. That is, creates the files that live in dist/
+-->
+
+<project name="dist">
+	<target name="zips" depends="backendzip,frontendzip,pluginjar">
+	</target>
+	
+	<target name="backendzip" depends="ecscomponentjar">
+		<delete file="${pack.configserver}"/>
+		<zip destfile="${pack.configserver}">
+			<fileset dir="${file.home}" includes="Components/**/**" />
+			<fileset dir="${dist.home}" includes="Components/**/**" />
+			<fileset dir="." includes="LICENSE.txt"/>
+		</zip>
+	</target>
+	
+	<target name="ecscomponentjar">
+		<delete file="${jar.ecs.component}" />
+		<jar destfile="${jar.ecs.component}" manifest="${file.home}/MANIFEST.components.MF">
+			<fileset dir="${build.home}/classes">
+				<include name="**/goldenGateServer/ecs/*.class" />
+				<include name="**/goldenGateServer/ecs/client/*.class" />
+			</fileset>
+			<fileset dir="${src.home}">
+				<include name="**/goldenGateServer/ecs/*.java" />
+				<include name="**/goldenGateServer/ecs/client/*.java" />
+			</fileset>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</jar>
+	</target>
+	
+	
+	<target name="frontendzip" depends="ecsservletjar,ecsmoduljar">
+		<delete file="${pack.configservlet}" />
+		<zip destfile="${pack.configservlet}">
+			<fileset dir="${file.home}" includes="**/WEB-INF/**" />
+			<fileset dir="${dist.home}" includes="**/WEB-INF/**" />
+			<fileset dir="." includes="LICENSE.txt"/>
+		</zip>
+	</target>
+	
+	<target name="ecsservletjar">
+		<delete file="${jar.ecs.servlet}" />
+		<jar destfile="${jar.ecs.servlet}" manifest="${file.home}/MANIFEST.components.MF">
+			<fileset dir="${build.home}/classes">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants*.class" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient*.class" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateConfigurationServlet*.class" />
+			</fileset>
+			<fileset dir="${src.home}">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants.java" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient.java" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateConfigurationServlet.java" />
+			</fileset>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</jar>
+	</target>
+	
+	<target name="ecsmoduljar">
+		<delete file="${jar.ecs.modul}" />
+		<jar destfile="${jar.ecs.modul}" manifest="${file.home}/MANIFEST.components.MF">
+			<fileset dir="${build.home}/classes">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants*.class" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient*.class" />
+				<include name="**/goldenGateServer/ecs/client/ConfigurationManagerModul*.class" />
+			</fileset>
+			<fileset dir="${src.home}">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants.java" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient.java" />
+				<include name="**/goldenGateServer/ecs/client/ConfigurationManagerModul.java" />
+			</fileset>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</jar>
+	</target>
+	
+	
+	<target name="pluginjar">
+		<delete file="${jar.ecs.plugin}" />
+		<jar destfile="${jar.ecs.plugin}" manifest="${file.home}/MANIFEST.plugins.MF">
+			<fileset dir="${build.home}/classes">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants*.class" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient*.class" />
+				<include name="**/goldenGateServer/ecs/client/EcsConfigurationManager*.class" />
+			</fileset>
+			<fileset dir="${src.home}">
+				<include name="**/goldenGateServer/ecs/GoldenGateEcsConstants.java" />
+				<include name="**/goldenGateServer/ecs/client/GoldenGateEcsClient.java" />
+				<include name="**/goldenGateServer/ecs/client/EcsConfigurationManager.java" />
+			</fileset>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</jar>
+	</target>
+</project>

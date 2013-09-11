@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+	Handles the compilation step itself. Especially the classpath is set up
+	here.
+-->
+
+<project name="javac">
+	
+	<!-- set up the classpath for compilation, this should always match the
+	     Eclipse configuration. -->
+	<path id="compile.classpath">
+		<!-- include all .jar in the lib/ directory -->
+	    <fileset dir="${lib.home}">
+	        <include name="*.jar" />
+	    </fileset>
+		<!-- include servlet API .jar -->
+	    <fileset dir="tomcatLib">
+	        <include name="*.jar" />
+	    </fileset>
+	</path>
+	
+	<!-- The task off all tasks -->
+	<target name="compile" depends="compileSvr,compileClt,compileWeb,compileDgPacker" description="Compile GoldenGATE Server Java sources">
+		<!-- only proxy for three compile tasks -->
+	</target>
+	
+	<!-- Compile backend server core and components -->
+	<target name="compileSvr" description="Compile GoldenGATE Server backend Java sources">
+		
+	    <!-- Compile Java classes as necessary -->
+	    <javac destdir="${build.home}/classes" includeantruntime="false" >
+	    	<src path="${src.home}" />
+    		<include name="**/goldenGateServer/ats/*.java" />
+    		<include name="**/goldenGateServer/ats/client/*.java" />
+    		<include name="**/goldenGateServer/dic/*.java" />
+    		<include name="**/goldenGateServer/dio/*.java" />
+    		<include name="**/goldenGateServer/dio/connectors/*.java" />
+    		<include name="**/goldenGateServer/dio/data/*.java" />
+    		<include name="**/goldenGateServer/dio/util/*.java" />
+    		<include name="**/goldenGateServer/drs/*.java" />
+    		<include name="**/goldenGateServer/dst/*.java" />
+    		<include name="**/goldenGateServer/eXist/*.java" />
+    		<include name="**/goldenGateServer/exp/*.java" />
+    		<include name="**/goldenGateServer/scs/*.java" />
+    		<include name="**/goldenGateServer/srs/*.java" />
+    		<include name="**/goldenGateServer/srs/connectors/*.java" />
+    		<include name="**/goldenGateServer/srs/data/*.java" />
+    		<include name="**/goldenGateServer/wcs/*.java" />
+	        <classpath refid="compile.classpath" />
+	    </javac>
+	</target>
+	
+	<!-- Compile GoldenGATE Editor client plugins if GoldenGATE.jar available -->
+	<target name="check-gg" unless="gg.exists">
+		<available property="gg.exists" file="../goldengate-editor/dist/GoldenGATE.jar"/>
+	</target>
+	<target name="compileClt" depends="check-gg" if="${gg.exists}" description="Compile GoldenGATE Editor plugin Java sources">
+		
+	    <!-- Compile Java classes as necessary -->
+	    <javac destdir="${build.home}/classes" includeantruntime="false" >
+	    	<src path="${src.home}" />
+	    	
+    		<include name="**/goldenGateServer/dio/GoldenGateDioConstants.java" />
+    		<include name="**/goldenGateServer/dio/client/GoldenGateDioClient.java" />
+    		<include name="**/goldenGateServer/dio/client/GoldenGateDioDocumentIO.java" />
+    		<include name="**/goldenGateServer/dio/client/batch/*.java" />
+    		<include name="**/goldenGateServer/dio/client/documentGateway/*.java" />
+    		<include name="**/goldenGateServer/dio/data/*.java" />
+	    	
+	        <classpath refid="compile.classpath" />
+	    </javac>
+	</target>
+	
+	<!-- Compile web frontend and modules -->
+	<target name="compileWeb" description="Compile GoldenGATE Server web front-end Java sources">
+		
+	    <!-- Compile Java classes as necessary -->
+	    <javac destdir="${build.home}/classes" includeantruntime="false" >
+	    	<src path="${src.home}" />
+	    	
+    		<include name="**/goldenGateServer/dio/GoldenGateDioConstants.java" />
+    		<include name="**/goldenGateServer/dio/client/DocumentServlet.java" />
+    		<include name="**/goldenGateServer/dio/client/GoldenGateDioClient.java" />
+    		<include name="**/goldenGateServer/dio/data/*.java" />
+	    	
+    		<include name="**/goldenGateServer/scs/GoldenGateScsConstants*.java" />
+    		<include name="**/goldenGateServer/scs/client/*.java" />
+	    	
+    		<include name="**/goldenGateServer/srs/GoldenGateSrsConstants*.java" />
+    		<include name="**/goldenGateServer/srs/client/*.java" />
+    		<include name="**/goldenGateServer/srs/data/*.java" />
+    		<include name="**/goldenGateServer/srs/webPortal/*.java" />
+    		<include name="**/goldenGateServer/srs/webPortal/layoutData/*.java" />
+    		<include name="**/goldenGateServer/srs/webPortal/layouts/*.java" />
+    		<include name="**/goldenGateServer/srs/webPortal/resultLinkers*.java" />
+	    	
+	        <classpath refid="compile.classpath" />
+	    </javac>
+	</target>
+	
+	<!-- Compile packer utility for document gateway -->
+	<target name="compileDgPacker" description="Compile document gateway packer tool">
+		
+	    <!-- Compile Java classes as necessary -->
+	    <javac destdir="${build.home}/classes" includeantruntime="false" >
+	    	<src path="${src.home}" />
+  	 		<include name="**/goldenGateServer/dio/utilities/*.java" />
+	    	
+	    	<src path="../goldengate-editor/src" />
+			<include name="**/goldenGate/utilities/PackerUtils.java" />
+	    </javac>
+	</target>
+</project>

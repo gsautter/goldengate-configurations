@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<web-app>
+	<servlet>
+		<servlet-name>ConfigurationServlet</servlet-name>
+		<servlet-class>de.uka.ipd.idaho.goldenGateServer.ecs.client.GoldenGateConfigurationServlet</servlet-class>
+		<init-param>
+			<param-name>dataPath</param-name>
+			<param-value>configsData</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>ConfigurationServlet</servlet-name>
+		<url-pattern>/Configurations</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>ConfigurationServlet</servlet-name>
+		<url-pattern>/Configurations/*</url-pattern>
+	</servlet-mapping>
+</web-app>
