@@ -277,7 +277,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	/**
 	 * Upload a data item to the GoldenGATE ECS, useful for uploading the actual
 	 * data of configurations after client side modifications. This requires
-	 * administrative priviledges and is intended for updating the configuration
+	 * administrative privileges and is intended for updating the configuration
 	 * hosted by the ECS.
 	 * @param dataName the path (prefixed with the configuration's base path) and
 	 *            name of the data item to fetch
@@ -299,14 +299,6 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 			bw.newLine();
 			bw.write(dataName);
 			bw.newLine();
-//			bw.flush();
-//			
-//			final BufferedReader br = con.getReader();
-//			String error = br.readLine();
-//			if (!UPDATE_DATA.equals(error)) {
-//				con.close();
-//				throw new IOException(error);
-//			}
 			
 			final Base64OutputStream bos = new Base64OutputStream(bw);
 			return new FilterOutputStream(bos) {
@@ -382,7 +374,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 * Retrieve detail information about all configurations existing in the
 	 * backing ECS. The configuration objects returned by this method will not
 	 * contain any plugins or resources, only the mere main data. (requires
-	 * administrative priviledges)
+	 * administrative privileges)
 	 * @return an array of descriptors for all the configurations existing in
 	 *         the backing ECS
 	 * @throws IOException
@@ -431,7 +423,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	/**
 	 * Retrieve the descriptor of a specific configuration, ignoring
 	 * permissions, levels, resource, groups, etc. (requires administrative
-	 * priviledges)
+	 * privileges)
 	 * @param configName the name of the configuration to retrieve the
 	 *            descriptor for
 	 * @return an unfiltered descriptor for the configuration with the specified
@@ -475,9 +467,9 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 * not exist in the backing ECS, it is created. The updated or newly created
 	 * configuration will be a projection of the specified base configuration,
 	 * inheriting all updates of the latter, but having no option of updating
-	 * its backing data itself. For creating or updating meterialized
+	 * its backing data itself. For creating or updating materialized
 	 * configurations, use uploadConfiguration(). (requires administrative
-	 * priviledges)
+	 * privileges)
 	 * @param configName the name of the configuration.
 	 * @param baseConfigName the name of the configuration that forms the basis.
 	 *            On updates of existing configurations, this parameter can be
@@ -505,8 +497,6 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 			bw.newLine();
 			bw.write(baseConfigName);
 			bw.newLine();
-//			bw.write(materialize ? configName : baseConfigName);
-//			bw.newLine();
 			for (int p = 0; p < plugins.length; p++) {
 				bw.write("P:" + plugins[p]);
 				bw.newLine();
@@ -532,86 +522,12 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 		}
 	}
 	
-//	/**
-//	 * Update a configuration. If a configuration with the specified name does
-//	 * not exist in the backing ECS, it is created. Materialized configurations
-//	 * cannot be updated this way. (requires administrative priviledges)
-//	 * @param configName the name of the configuration.
-//	 * @param baseConfigName the name of the configuration that forms the basis.
-//	 *            On updates of existing configurations, this parameter can be
-//	 *            null. It can also be used for changing the base configuration
-//	 *            of a projected configuration.
-//	 * @param materialize should the configuration with the specified name be
-//	 *            materialized? If set to false, the updated or newly created
-//	 *            configuration will be a projection of the specified base
-//	 *            configuration, inheriting all updates of the latter, but
-//	 *            having no option of updating its backing data itself. If set
-//	 *            to true, on the other hand, all data of the specified base
-//	 *            configuration will be copied to a new path named after the new
-//	 *            configuration. The new configuration will not inherit updates
-//	 *            from the base configuration, but its data can be changed
-//	 *            independently, and it can act as a base configuration itself.
-//	 *            Once a configuration has been materialized, it cannot be
-//	 *            reverted into a projection of another base configuration, nor
-//	 *            be deleted. This is because projected configurations cannot be
-//	 *            the base for other configurations, and de-materializing a
-//	 *            materialized configuration could therefore rip the base from
-//	 *            other projections.
-//	 * @param plugins the names of the plugins in the base configuration to be
-//	 *            included in the configuration
-//	 * @param resources the names of the resources in the base configuration to
-//	 *            be included in the configuration
-//	 * @throws IOException
-//	 */
-//	public void updateConfiguration(String configName, String baseConfigName, boolean materialize, String[] plugins, String[] resources) throws IOException {
-//		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
-//		
-//		Connection con = null;
-//		try {
-//			con = this.authClient.getConnection();
-//			BufferedWriter bw = con.getWriter();
-//			
-//			bw.write(UPDATE_CONFIGURATION);
-//			bw.newLine();
-//			bw.write(this.authClient.getSessionID());
-//			bw.newLine();
-//			bw.write(configName);
-//			bw.newLine();
-//			bw.write(baseConfigName);
-//			bw.newLine();
-//			bw.write(materialize ? configName : baseConfigName);
-//			bw.newLine();
-//			for (int p = 0; p < plugins.length; p++) {
-//				bw.write("P:" + plugins[p]);
-//				bw.newLine();
-//			}
-//			for (int r = 0; r < resources.length; r++) {
-//				bw.write("R:" + resources[r]);
-//				bw.newLine();
-//			}
-//			bw.newLine(); // terminal newline to prevent server from blocking
-//			bw.flush();
-//			
-//			BufferedReader br = con.getReader();
-//			String error = br.readLine();
-//			if (!UPDATE_CONFIGURATION.equals(error))
-//				throw new IOException(error);
-//		}
-//		catch (Exception e) {
-//			throw new IOException(e.getMessage());
-//		}
-//		finally {
-//			if (con != null)
-//				con.close();
-//		}
-//	}
-//	
 	/**
 	 * Upload a new configuration from a GoldenGATE Editor to ECS. This will
 	 * create a new materialized configuration on ECS, using the data items from
 	 * the local GoldenGATE installation. If the specified descriptor point to a
 	 * configuration that already exists, this configuration will be updated.
-	 * (requires administrative priviledges)
+	 * (requires administrative privileges)
 	 * @param basePath the local base path of the configuration to upload
 	 * @param specialData the handler for special data
 	 * @param config the descriptor of the configuration to upload
@@ -717,7 +633,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	
 	/**
 	 * Delete a configuration. If the configuration with the specified name is
-	 * materialized, it cannot be deleted. (requires administrative priviledges)
+	 * materialized, it cannot be deleted. (requires administrative privileges)
 	 * @param configName the name of the configuration to delete.
 	 * @throws IOException
 	 */
@@ -755,7 +671,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 * Retrieve the mapping of user names to default configuration names. Users
 	 * not mapped to any configuration explicitly use the ECS's default
 	 * configuration. This configuration is marked by its name enclosed in angle
-	 * brackets. (requires administrative priviledges)
+	 * brackets. (requires administrative privileges)
 	 * @return a map containing the user names and corresponding default
 	 *         configuration names, user names in alphabetical order
 	 * @throws IOException
@@ -800,7 +716,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	/**
 	 * Set the mapping of user names to default configuration names. Users not
 	 * mapped to any configuration explicitly are set to use the ECS's default
-	 * configuration. (requires administrative priviledges)
+	 * configuration. (requires administrative privileges)
 	 * @param userConfigs a map containing the user names and corresponding
 	 *            default configuration names to set
 	 * @throws IOException
@@ -845,7 +761,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	
 	/**
 	 * Retrieve the list of configurations available online, i.e., through a
-	 * configuration servlet. (requires administrative priviledges)
+	 * configuration servlet. (requires administrative privileges)
 	 * @return the list of configurations available online
 	 * @throws IOException
 	 */
@@ -854,7 +770,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * Set the configurations available online. (requires administrative priviledges)
+	 * Set the configurations available online. (requires administrative privileges)
 	 * @param onlineConfigs the list of configurations available online
 	 * @throws IOException
 	 */
@@ -893,7 +809,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	
 	
 	/**
-	 * Retrieve all available groups (requires administrative priviledges)
+	 * Retrieve all available groups (requires administrative privileges)
 	 * @return an array holding all groups available in the ECS
 	 * @throws IOException
 	 */
@@ -902,7 +818,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * Retrieve all available plugins (requires administrative priviledges)
+	 * Retrieve all available plugins (requires administrative privileges)
 	 * @return an array holding all plugins available in the ECS
 	 * @throws IOException
 	 */
@@ -911,7 +827,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * Retrieve all available resources (requires administrative priviledges)
+	 * Retrieve all available resources (requires administrative privileges)
 	 * @return an array holding all resources available in the ECS
 	 * @throws IOException
 	 */
@@ -955,7 +871,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	
 	
 	/**
-	 * create a new group for the ECS (requires administrative priviledges)
+	 * create a new group for the ECS (requires administrative privileges)
 	 * @param groupName the name for the new group
 	 * @throws IOException
 	 */
@@ -992,7 +908,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * delete a group (requires administrative priviledges)
+	 * delete a group (requires administrative privileges)
 	 * @param groupName the name of the group to delete
 	 * @throws IOException
 	 */
@@ -1028,34 +944,9 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 		}
 	}
 	
-	
-//	/**
-//	 * Retrieve the groups explicitly granted to a specific group, excluding the
-//	 * groups obtained through other groups (requires administrative priviledges)
-//	 * @param groupName the group to retrieve the groups for
-//	 * @return an array holding the groups explicitly granted to the specified
-//	 *         group
-//	 * @throws IOException
-//	 */
-//	public String[] getGroupGroups(String groupName) throws IOException {
-//		return this.getGroupsOrPluginsOrResources(GET_GROUP_GROUPS, groupName, false);
-//	}
-//	
-//	/**
-//	 * Set the groups of a group (requires administrative priviledges). Granting a
-//	 * group to itself will have no effect, but creating a circular inheritance
-//	 * will result in an error.
-//	 * @param groupName the group to set the groups for
-//	 * @param groups the groups the specified group shall have from now on
-//	 * @throws IOException
-//	 */
-//	public void setGroupGroups(String groupName, String[] groups) throws IOException {
-//		this.modifyGroupsOrPluginsOrResources(SET_GROUP_GROUPS, groupName, groups);
-//	}
-//	
 	/**
 	 * Retrieve the plugins explicitly granted to a specific group, excluding
-	 * the ones obtained from other groups (requires administrative priviledges)
+	 * the ones obtained from other groups (requires administrative privileges)
 	 * @param groupName the group to retrieve the plugins for
 	 * @return an array holding the plugins explicitly granted to the
 	 *         specified group
@@ -1066,7 +957,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * Set the plugins of a group (requires administrative priviledges). This
+	 * Set the plugins of a group (requires administrative privileges). This
 	 * operation will not change plugins obtained through other groups.
 	 * @param groupName the group to set the plugins for
 	 * @param plugins the plugins the specified group shall have from now
@@ -1079,7 +970,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	
 	/**
 	 * Retrieve the resources explicitly granted to a specific group, excluding
-	 * the ones obtained from other groups (requires administrative priviledges)
+	 * the ones obtained from other groups (requires administrative privileges)
 	 * @param groupName the group to retrieve the resources for
 	 * @return an array holding the resources explicitly granted to the
 	 *         specified group
@@ -1090,7 +981,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
-	 * Set the resources of a group (requires administrative priviledges). This
+	 * Set the resources of a group (requires administrative privileges). This
 	 * operation will not change resources obtained through other groups.
 	 * @param groupName the group to set the resources for
 	 * @param resources the resources the specified group shall have from now

@@ -70,7 +70,7 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  * The GoldenGATE Editor Configuration Server (ECS) provides specialized
  * configurations for the GoldenGATE Editor when the latter is used as a front
  * end to a GoldenGATE CMS or other document storage server. In particular, the
- * configurations are sub sets of the master configuration, ie all plugins and
+ * configurations are sub sets of the master configuration, i.e. all plugins and
  * resources available to the ECS. The configurations provided depend on (a) the
  * permissions of the user logging in, and optionally (b) on the markup progress
  * of a given document. For determining the former, ECS uses GoldenGATE UPS,
@@ -570,10 +570,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					int read;
 					Base64OutputStream bos = new Base64OutputStream(output);
 					if (DEBUG) System.out.println("Got streams, start sending");
-					while ((read = fis.read(buffer)) != -1) {
-//						if (DEBUG) System.out.println("  " + read + " bytes");
+					while ((read = fis.read(buffer)) != -1)
 						bos.write(buffer, 0, read);
-					}
 					if (DEBUG) System.out.println("Data sent");
 					fis.close();
 					bos.close(false);
@@ -986,27 +984,6 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					output.newLine();
 				}
 				output.newLine();
-				
-//				//	get last update time of local files
-//				long configTime = uploadConfiguration(config, receiveTime);
-//				
-//				//	get file list
-//				StringVector files = ConfigurationUtils.listFilesRelative(new File(dataPath, config.name));
-//				
-//				//	indicate success
-//				output.write(UPLOAD_CONFIGURATION);
-//				output.newLine();
-//				
-//				//	send timestamps
-//				output.write("" + (System.currentTimeMillis() - configTime));
-//				output.newLine();
-//				
-//				//	send file list
-//				for (int f = 0; f < files.size(); f++) {
-//					output.write(files.get(f));
-//					output.newLine();
-//				}
-//				output.newLine();
 			}
 		};
 		cal.add(ca);
@@ -1461,7 +1438,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			}
 		}
 		
-		//	check grobal permission for configuration
+		//	check global permission for configuration
 		if (this.uaa.hasPermission(userName, (CONFIGURATION_PERMISSION_PREFIX + model.name + CONFIGURATION_ALL_PERMISSION_SUFFIX)))
 			return this.projectConfiguration(userName, model, pluginNameSet, resourceNameSet);
 		
@@ -1633,7 +1610,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	}
 	
 	/**
-	 * Create a group to be administrated by the ECS. This will also register a
+	 * Create a group to be administered by the ECS. This will also register a
 	 * permission for the group with UPS, names 'ECS.Group.&lt;groupName&gt;',
 	 * where &lt;groupName&gt; is the argument group name.
 	 * @param groupName the group to create
@@ -1658,7 +1635,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	}
 	
 	/**
-	 * Delete a group administrated by the ECS.
+	 * Delete a group administered by the ECS.
 	 * @param groupName the group to delete
 	 * @return an error message, or null if the group was deleted successfully
 	 */

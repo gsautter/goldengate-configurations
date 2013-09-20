@@ -57,7 +57,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import de.uka.ipd.idaho.easyIO.settings.Settings;
 import de.uka.ipd.idaho.goldenGate.GoldenGateConfiguration;
 import de.uka.ipd.idaho.goldenGate.GoldenGateConstants;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils;
@@ -106,14 +105,15 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 	private File configDataRoot;
 	
 	/* (non-Javadoc)
-	 * @see de.uka.ipd.idaho.goldenGateServer.client.GgServerClientServlet#init(de.uka.ipd.idaho.easyIO.settings.Settings)
+	 * @see de.uka.ipd.idaho.goldenGateServer.client.GgServerClientServlet#doInit()
 	 */
-	protected void init(Settings config) {
+	protected void doInit() throws ServletException {
+		super.doInit();
 		
 		//	get configuration data location
-		String configDataLocation = config.getSetting("configDataLocation");
+		String configDataLocation = this.getSetting("configDataLocation");
 		if (configDataLocation == null)
-			this.configDataRoot = new File(new File(this.rootFolder, "caches"), GoldenGateConstants.CONFIG_FOLDER_NAME);
+			this.configDataRoot = new File(new File(this.webInfFolder, "caches"), GoldenGateConstants.CONFIG_FOLDER_NAME);
 		else this.configDataRoot = new File(configDataLocation);
 	}
 	
@@ -296,70 +296,6 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		
 		//	use cached timestamps
 		return configTray.getDataItemTimestamp(dataName);
-//		Long timestamp = ((Long) configTray.timestampCache.get(dataName));
-//		if (timestamp != null)
-//			return timestamp.longValue();
-//		
-//		//	check constant data items
-//		if (configTray.config.settingsPath.equals(dataName) || configTray.config.iconImagePath.equals(dataName) || dataName.startsWith(configTray.config.helpBasePath))
-//			return configTray.config.configTimestamp;
-//		
-//		//	check if possible lib
-//		boolean mayBeLib = ((dataName.indexOf(GoldenGateConstants.JAR_BIN_FOLDER_SUFFIX + "/") != -1) && dataName.toLowerCase().endsWith(".jar"));
-//		
-//		//	go through data items
-//		for (Iterator dit = configTray.config.dataItems.iterator(); dit.hasNext();) {
-//			DataItem di = ((DataItem) dit.next());
-//			if (dataName.equals(di.path))
-//				return di.timestamp;
-//		}
-//		
-//		//	go through plugins
-//		for (Iterator pit = configTray.config.plugins.iterator(); pit.hasNext();) {
-//			Plugin plugin = ((Plugin) pit.next());
-//			
-//			//	check plugin class path
-//			if (plugin.classPath.equals(dataName))
-//				return plugin.timestamp;
-//			
-//			//	check libs
-//			if (mayBeLib) {
-//				String libPath = ((plugin.classPath.lastIndexOf('/') == -1) ? "" : plugin.classPath.substring(0, plugin.classPath.lastIndexOf('/') + 1));
-//				String plDataName = dataName.substring(libPath.length());
-//				for (Iterator lit = plugin.libs.iterator(); lit.hasNext();) {
-//					Lib lib = ((Lib) lit.next());
-//					if (plDataName.equals(lib.path))
-//						return lib.timestamp;
-//				}
-//			}
-//			
-//			//	go through resources & data items
-//			String dataPath = (plugin.dataPath.endsWith("/") ? plugin.dataPath : (plugin.dataPath + "/"));
-//			if (dataName.startsWith(dataPath)) {
-//				String plDataName = dataName.substring(dataPath.length());
-//				
-//				for (Iterator dit = plugin.dataItems.iterator(); dit.hasNext();) {
-//					DataItem di = ((DataItem) dit.next());
-//					if (plDataName.equals(di.path))
-//						return di.timestamp;
-//				}
-//				
-//				for (Iterator rit = plugin.resources.iterator(); rit.hasNext();) {
-//					Resource res = ((Resource) rit.next());
-//					if (plDataName.equals(res.path))
-//						return res.timestamp;
-//					
-//					for (Iterator dit = res.dataItems.iterator(); dit.hasNext();) {
-//						DataItem di = ((DataItem) dit.next());
-//						if (plDataName.equals(di.path))
-//							return di.timestamp;
-//					}
-//				}
-//			}
-//		}
-//		
-//		//	nothing found
-//		return -1;
 	}
 	
 	private DataInputStream getInputStream(String dataName, final long dataTimestamp) throws IOException {
@@ -517,35 +453,6 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 				ConfigurationTray configTray = this.getConfigurationDescriptor(configName);
 				
 				TreeSet fileList = new TreeSet(Arrays.asList(ConfigurationUtils.getDataNameList(null, configTray.config)));
-//				TreeSet fileList = new TreeSet();
-//				fileList.add(configTray.config.settingsPath);
-//				fileList.add(configTray.config.iconImagePath);
-//				fileList.add(GoldenGateConfiguration.DESCRIPTOR_FILE_NAME);
-//				for (Iterator dit = configTray.config.dataItems.iterator(); dit.hasNext();)
-//					fileList.add(((DataItem) dit.next()).path);
-//				
-//				for (Iterator pit = configTray.config.plugins.iterator(); pit.hasNext();) {
-//					Plugin plugin = ((Plugin) pit.next());
-//					if (plugin.classPath.length() != 0)
-//						fileList.add(plugin.classPath);
-//					
-//					String libPath = ((plugin.classPath.lastIndexOf('/') == -1) ? "" : plugin.classPath.substring(0, plugin.classPath.lastIndexOf('/') + 1));
-//					for (Iterator lit = plugin.libs.iterator(); lit.hasNext();)
-//						fileList.add(libPath + ((Lib) lit.next()).path);
-//					
-//					String dataPath = (plugin.dataPath.endsWith("/") ? plugin.dataPath : (plugin.dataPath + "/"));
-//					for (Iterator dit = plugin.dataItems.iterator(); dit.hasNext();)
-//						fileList.add(dataPath + ((DataItem) dit.next()).path);
-//					
-//					for (Iterator rit = plugin.resources.iterator(); rit.hasNext();) {
-//						Resource resource = ((Resource) rit.next());
-//						if (resource.path.length() != 0)
-//							fileList.add(dataPath + resource.path);
-//						
-//						for (Iterator dit = resource.dataItems.iterator(); dit.hasNext();)
-//							fileList.add(dataPath + ((DataItem) dit.next()).path);
-//					}
-//				}
 				
 				int contentLength = 0;
 				int newLineLength = 1;
