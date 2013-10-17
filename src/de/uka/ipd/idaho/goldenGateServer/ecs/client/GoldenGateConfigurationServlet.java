@@ -117,6 +117,14 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		else this.configDataRoot = new File(configDataLocation);
 	}
 	
+	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.easyIO.web.HtmlServlet#reInit()
+	 */
+	protected void reInit() throws ServletException {
+		super.reInit();
+		this.configurationTrayCache.clear();
+	}
+	
 	private synchronized Configuration[] getConfigurationDescriptors() throws IOException {
 		Connection con = null;
 		try {
