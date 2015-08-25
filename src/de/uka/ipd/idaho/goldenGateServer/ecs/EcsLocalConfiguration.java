@@ -36,8 +36,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 
+import de.uka.ipd.idaho.goldenGate.configuration.PluginDataProviderConfigurationBased;
 import de.uka.ipd.idaho.goldenGate.configuration.XmlConfiguration;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Configuration;
+import de.uka.ipd.idaho.goldenGate.plugins.GoldenGatePluginDataProvider;
+import de.uka.ipd.idaho.goldenGate.plugins.PluginDataProviderPrefixBased;
 
 /**
  * GoldenGateConfiguration to wrap around a configuration descriptor, to use
@@ -46,7 +49,6 @@ import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Configuratio
  * @author sautter
  */
 public class EcsLocalConfiguration extends XmlConfiguration implements GoldenGateEcsConstants {
-	
 	private File basePath; // the base path of the actual configuration (below the root path)
 	
 	/**
@@ -73,6 +75,13 @@ public class EcsLocalConfiguration extends XmlConfiguration implements GoldenGat
 	 */
 	public String getHelpBaseURL() {
 		return (new File(this.basePath, DOCUMENTATION_FOLDER_NAME)).getAbsolutePath();
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.goldenGate.GoldenGateConfiguration#getHelpDataProvider()
+	 */
+	public GoldenGatePluginDataProvider getHelpDataProvider() {
+		return new PluginDataProviderPrefixBased(new PluginDataProviderConfigurationBased(this), DOCUMENTATION_FOLDER_NAME);
 	}
 	
 	/* (non-Javadoc)

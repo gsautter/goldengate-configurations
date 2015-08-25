@@ -62,6 +62,8 @@ import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Resource;
 import de.uka.ipd.idaho.goldenGateServer.AbstractGoldenGateServerComponent;
 import de.uka.ipd.idaho.goldenGateServer.GoldenGateServerComponentRegistry;
 import de.uka.ipd.idaho.goldenGateServer.uaa.UserAccessAuthority;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64OutputStream;
 import de.uka.ipd.idaho.stringUtils.StringVector;
@@ -79,6 +81,8 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  * @author sautter
  */
 public class GoldenGateECS extends AbstractGoldenGateServerComponent implements GoldenGateConstants, GoldenGateEcsConstants {
+	
+	//	TODO switch to binary receiving once there is more time for testing
 	
 	private static final String CONFIGURATION_PERMISSION_PREFIX = "ECS.Configuration.";
 	private static final String CONFIGURATION_ALL_PERMISSION_SUFFIX = ".All";
@@ -542,6 +546,42 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			public String getActionCommand() {
 				return GET_DATA;
 			}
+//			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
+//				
+//				//	check authentication
+//				String sessionId = input.readLine();
+//				if (!uaa.isValidSession(sessionId) && !CONFIG_SERVLET_SESSION_ID.equals(sessionId)) {
+//					output.writeLine("Invalid session (" + sessionId + ")");
+//					return;
+//				}
+//				
+//				//	read data name
+//				String dataName = input.readLine();
+//				if (DEBUG) System.out.println("Data name is " + dataName);
+//				
+//				//	create and check data file
+//				File dataFile = new File(dataPath, dataName);
+//				if (dataFile.exists() && dataFile.isFile()) {
+//					if (DEBUG) System.out.println("File is " + dataFile.getAbsolutePath());
+//					
+//					//	indicate data coming
+//					output.writeLine(GET_DATA);
+//					
+//					//	send data
+//					FileInputStream fis = new FileInputStream(dataFile);
+//					byte[] buffer = new byte[1024];
+//					int read;
+//					if (DEBUG) System.out.println("Got streams, start sending");
+//					while ((read = fis.read(buffer)) != -1)
+//						output.write(buffer, 0, read);
+//					if (DEBUG) System.out.println("Data sent");
+//					fis.close();
+//					if (DEBUG) System.out.println("Streams closed");
+//				}
+//				
+//				//	indicate failure
+//				else output.writeLine("Data not found, or it's a directory");
+//			}
 			public void performActionNetwork(BufferedReader input, BufferedWriter output) throws IOException {
 				
 				//	check authentication
@@ -593,6 +633,53 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			public String getActionCommand() {
 				return UPDATE_DATA;
 			}
+//			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
+//				
+//				//	check authentication
+//				String sessionId = input.readLine();
+//				if (!uaa.isValidSession(sessionId)) {
+//					output.writeLine("Invalid session (" + sessionId + ")");
+//					return;
+//				}
+//				else if (!uaa.isAdminSession(sessionId)) {
+//					output.writeLine("Administrative priviledges required");
+//					return;
+//				}
+//				
+//				//	read data name
+//				String dataName = input.readLine();
+//				if (DEBUG) System.out.println("Data name is " + dataName);
+//				
+//				//	create and check data file
+//				File dataFile = new File(dataPath, dataName);
+//				
+//				//	data file exists, make way
+//				if (dataFile.exists()) {
+//					if (dataFile.isFile())
+//						dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
+//					else {
+//						output.writeLine("Cannot write to directory");
+//						return;
+//					}
+//				}
+//				if (dataFile.getParentFile() != null)
+//					dataFile.getParentFile().mkdirs();
+//				dataFile.createNewFile();
+//				if (DEBUG) System.out.println("File created");
+//				
+//				//	receive data
+//				FileOutputStream fos = new FileOutputStream(dataFile, true);
+//				if (DEBUG) System.out.println("Got streams");
+//				byte[] buffer = new byte[1024];
+//				for (int read; (read = input.read(buffer)) != -1;)
+//					fos.write(buffer, 0, read);
+//				if (DEBUG) System.out.println("Data read");
+//				fos.flush();
+//				fos.close();
+//				
+//				if (DEBUG) System.out.println("Done");
+//				output.writeLine(UPDATE_DATA);
+//			}
 			public void performActionNetwork(BufferedReader input, BufferedWriter output) throws IOException {
 				
 				//	check authentication
@@ -1224,7 +1311,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		return ((ComponentAction[]) cal.toArray(new ComponentAction[cal.size()]));
 	}
 	
-	private abstract class ListAction implements ComponentActionNetwork {
+//	private abstract class ListAction implements ComponentActionNetwork {
+	private abstract class ListAction extends ComponentActionNetwork {
 		private String actionCommand;
 		ListAction(String actionCommand) {
 			this.actionCommand = actionCommand;
@@ -1271,7 +1359,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		abstract String[] getList() throws IOException;
 	}
 	
-	private abstract class GetGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
+//	private abstract class GetGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
+	private abstract class GetGroupsOrPluginsOrResourcesAction extends ComponentActionNetwork {
 		private String actionCommand;
 		GetGroupsOrPluginsOrResourcesAction(String actionCommand) {
 			this.actionCommand = actionCommand;
@@ -1321,7 +1410,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		abstract String[] getGroupsOrPluginsOrResources(String groupName) throws IOException;
 	}
 	
-	private abstract class ModifyGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
+//	private abstract class ModifyGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
+	private abstract class ModifyGroupsOrPluginsOrResourcesAction extends ComponentActionNetwork {
 		private String actionCommand;
 		ModifyGroupsOrPluginsOrResourcesAction(String actionCommand) {
 			this.actionCommand = actionCommand;

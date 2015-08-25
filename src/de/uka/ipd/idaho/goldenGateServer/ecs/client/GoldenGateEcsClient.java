@@ -54,6 +54,8 @@ import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.SpecialDataH
 import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection.Connection;
 import de.uka.ipd.idaho.goldenGateServer.ecs.GoldenGateEcsConstants;
 import de.uka.ipd.idaho.goldenGateServer.uaa.client.AuthenticatedClient;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64OutputStream;
 import de.uka.ipd.idaho.stringUtils.StringVector;
@@ -65,6 +67,8 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  * @author sautter
  */
 public class GoldenGateEcsClient implements GoldenGateEcsConstants {
+	
+	//	TODO switch to binary transfer once ECS update deployed to server
 	
 	private AuthenticatedClient authClient;
 	
@@ -233,6 +237,43 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 *         from, or null, if the data item does not exist
 	 * @throws IOException
 	 */
+//	public InputStream getData(String dataName) throws IOException {
+//		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
+//		
+//		final Connection con;
+//		try {
+//			con = this.authClient.getConnection();
+//			BufferedLineOutputStream blos = con.getOutputStream();
+//			
+//			blos.writeLine(GET_DATA);
+//			blos.writeLine(this.authClient.getSessionID());
+//			blos.writeLine(dataName);
+//			blos.flush();
+//			
+//			BufferedLineInputStream blis = con.getInputStream();
+//			String error = blis.readLine();
+//			if (GET_DATA.equals(error))
+//				return new FilterInputStream(blis) {
+//					private Connection connection = con;
+//					public void close() throws IOException {
+//						this.connection.close();
+//						this.connection = null;
+//					}
+//					protected void finalize() throws Throwable {
+//						if (this.connection != null)
+//							this.connection.close();
+//					}
+//				};
+//			
+//			else {
+//				con.close();
+//				throw new IOException(error);
+//			}
+//		}
+//		catch (Exception e) {
+//			throw new IOException(e.getMessage());
+//		}
+//	}
 	public InputStream getData(String dataName) throws IOException {
 		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
 		
@@ -285,6 +326,50 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 *         to
 	 * @throws IOException
 	 */
+//	public OutputStream updateData(String dataName) throws IOException {
+//		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
+//		
+//		final Connection con;
+//		try {
+//			con = this.authClient.getConnection();
+//			final BufferedLineOutputStream blos = con.getOutputStream();
+//			
+//			blos.writeLine(UPDATE_DATA);
+//			blos.writeLine(this.authClient.getSessionID());
+//			blos.writeLine(dataName);
+//			
+//			return new FilterOutputStream(blos) {
+//				private Connection connection = con;
+//				private boolean unwritten = true;
+//				public void write(int b) throws IOException {
+//					this.unwritten = false;
+//					super.write(b);
+//				}
+//				public void close() throws IOException {
+//					if (this.unwritten) {
+//						blos.write((int) '\r');
+//						blos.write((int) '\n');
+//						System.out.println("Padded empty file upload");
+//					}
+//					blos.newLine();
+//					blos.flush();
+//					BufferedLineInputStream blis = con.getInputStream();
+//					String error = blis.readLine();
+//					if (!UPDATE_DATA.equals(error))
+//						throw new IOException(error);
+//					this.connection.close();
+//					this.connection = null;
+//				}
+//				protected void finalize() throws Throwable {
+//					if (this.connection != null)
+//						this.connection.close();
+//				}
+//			};
+//		}
+//		catch (Exception e) {
+//			throw new IOException(e.getMessage());
+//		}
+//	}
 	public OutputStream updateData(String dataName) throws IOException {
 		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
 		
