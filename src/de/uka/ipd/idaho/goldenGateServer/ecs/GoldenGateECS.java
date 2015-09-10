@@ -97,6 +97,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	
 	private UserAccessAuthority uaa = null;
 	
+	private File configBasePath;
+	
 	/** Constructor passing 'ECS' as the letter code to super constructor
 	 */
 	public GoldenGateECS() {
@@ -108,8 +110,18 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	 */
 	protected void initComponent() {
 		
+		//	get configuration storage folder
+		String configBasePath = this.configuration.getSetting("configurationBasePath");
+		while ((configBasePath != null) && configBasePath.startsWith("./"))
+			configBasePath = configBasePath.substring("./".length());
+		if ((configBasePath == null) || (configBasePath.trim().length() == 0))
+			this.configBasePath = this.dataPath;
+		else if ((configBasePath.indexOf(":\\") == -1) && (configBasePath.indexOf(":/") == -1) && !configBasePath.startsWith("/"))
+			this.configBasePath = new File(this.dataPath, configBasePath);
+		else this.configBasePath = new File(configBasePath);
+		
 		//	load configurations
-		File[] configurationFiles = this.dataPath.listFiles(new FileFilter() {
+		File[] configurationFiles = this.configBasePath.listFiles(new FileFilter() {
 			public boolean accept(File file) {
 				return (file.isFile() && file.getName().startsWith(CONFIGURATION_FILE_PREFIX) && file.getName().endsWith(".xml"));
 			}
@@ -248,7 +260,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	private void updateConfiguration(String configName, Configuration model, Set pluginNames, Set resourceNames) throws IOException {
 		this.configurationsByName.remove(configName);
 		
-		File configFile = new File(this.dataPath, (CONFIGURATION_FILE_PREFIX + configName + ".xml"));
+		File configFile = new File(this.configBasePath, (CONFIGURATION_FILE_PREFIX + configName + ".xml"));
 		this.invalidate(configFile);
 		
 		Configuration config = this.projectConfiguration(configName, model, pluginNames, resourceNames);
@@ -267,11 +279,11 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	private void deleteConfiguration(String configName) throws IOException {
 		this.configurationsByName.remove(configName);
 		this.deleteGroup(CONFIGURATION_FILE_PREFIX + configName);
-		this.invalidate(new File(this.dataPath, (CONFIGURATION_FILE_PREFIX + configName + ".xml")));
+		this.invalidate(new File(this.configBasePath, (CONFIGURATION_FILE_PREFIX + configName + ".xml")));
 	}
 	
 	private Configuration loadConfiguration(String configName) {
-		File configFile = new File(this.dataPath, (CONFIGURATION_FILE_PREFIX + configName + ".xml"));
+		File configFile = new File(this.configBasePath, (CONFIGURATION_FILE_PREFIX + configName + ".xml"));
 		try {
 			Reader configReader = new FileReader(configFile);
 			Configuration config = Configuration.readConfiguration(configReader);
@@ -357,7 +369,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			}
 		}
 		
-		File configFile = new File(this.dataPath, (CONFIGURATION_FILE_PREFIX + localConfig.name + ".xml"));
+		File configFile = new File(this.configBasePath, (CONFIGURATION_FILE_PREFIX + localConfig.name + ".xml"));
 		long configTime = configFile.lastModified();
 		
 		this.invalidate(configFile);
@@ -1696,7 +1708,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	public GoldenGateConfiguration getGgConfiguration(String configName) {
 		Configuration config = this.getConfiguration(configName);
 		if (config == null) return null;
-		else return new EcsLocalConfiguration(config, new File(this.dataPath, config.basePath));
+		else return new EcsLocalConfiguration(config, new File(this.configBasePath, config.basePath));
 	}
 	
 	/**
