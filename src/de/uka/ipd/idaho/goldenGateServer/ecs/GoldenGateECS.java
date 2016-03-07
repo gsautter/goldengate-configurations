@@ -1043,16 +1043,22 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	read configuration descriptor (up to the next blank line)
 				Configuration config = Configuration.readConfiguration(new Reader() {
+					BufferedReader in = input;
 					StringReader sr = null;
 					public void close() throws IOException {
 						input.close();
 					}
 					public int read(char[] cbuf, int off, int len) throws IOException {
+						if (this.in == null)
+							return -1;
 						if (this.sr == null) {
-							String line = input.readLine();
+							String line = this.in.readLine();
 							if ((line != null) && (line.length() != 0))
-								this.sr = new StringReader(line + "\n");
-							else return -1;
+								this.sr = new StringReader(line + "\r\n");
+							else {
+								this.in = null;
+								return -1;
+							}
 						}
 						int read = this.sr.read(cbuf, off, len);
 						if (read == -1) {
