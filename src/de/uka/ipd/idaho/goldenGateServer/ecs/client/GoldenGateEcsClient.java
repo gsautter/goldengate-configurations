@@ -37,6 +37,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,14 +52,15 @@ import de.uka.ipd.idaho.gamta.util.ProgressMonitor;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Configuration;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.SpecialDataHandler;
+import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection;
 import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection.Connection;
 import de.uka.ipd.idaho.goldenGateServer.ecs.GoldenGateEcsConstants;
 import de.uka.ipd.idaho.goldenGateServer.uaa.client.AuthenticatedClient;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.Base64OutputStream;
 import de.uka.ipd.idaho.stringUtils.StringVector;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
+//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 
 /**
  * A client for remotely accessing the editor configuration provided by a
@@ -1148,4 +1150,14 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 				con.close();
 		}
 	}
+//	
+//	public static void main(String[] args) throws Exception {
+//		AuthenticatedClient ac = AuthenticatedClient.getAuthenticatedClient(ServerConnection.getServerConnection("http://plazi.cs.umb.edu/GgServer/proxy"));
+//		ac.login("", ""); // TODO add credentials for tests
+//		GoldenGateEcsClient ecsc = new GoldenGateEcsClient(ac);
+//		Configuration conf = ecsc.getConfiguration("ServerBatch.imagine");
+//		BufferedWriter cbw = new BufferedWriter(new OutputStreamWriter(System.out));
+//		conf.writeXml(cbw);
+//		cbw.flush();
+//	}
 }

@@ -654,7 +654,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 //					return;
 //				}
 //				else if (!uaa.isAdminSession(sessionId)) {
-//					output.writeLine("Administrative priviledges required");
+//					output.writeLine("Administrative privileges required");
 //					return;
 //				}
 //				
@@ -702,7 +702,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					return;
 				}
 				else if (!uaa.isAdminSession(sessionId)) {
-					output.write("Administrative priviledges required");
+					output.write("Administrative privileges required");
 					output.newLine();
 					return;
 				}
