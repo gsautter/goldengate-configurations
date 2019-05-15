@@ -153,6 +153,7 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 				Configuration[] configs = ((Configuration[]) configList.toArray(new Configuration[configList.size()]));
 				
 				//	remove outdated full descriptors from cache
+				this.configurationTrayCacheLastChecked = System.currentTimeMillis();
 				for (int c = 0; c < configs.length; c++) {
 					ConfigurationTray configTray = ((ConfigurationTray) this.configurationTrayCache.get(configs[c].name));
 					if ((configTray != null) && (configTray.config.configTimestamp < configs[c].configTimestamp))
@@ -231,8 +232,13 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 	}
 	
 	private Map configurationTrayCache = Collections.synchronizedMap(new HashMap());
+	private long configurationTrayCacheLastChecked = System.currentTimeMillis();
 	
 	private synchronized ConfigurationTray getConfigurationDescriptor(String configName) throws IOException {
+		
+		//	check cached configuration descriptors if last done more than an hour ago
+		if (this.configurationTrayCacheLastChecked < (System.currentTimeMillis() - (1000 * 60 * 60)))
+			this.getConfigurationDescriptors();
 		
 		//	do cache lookup
 		ConfigurationTray configTray = ((ConfigurationTray) this.configurationTrayCache.get(configName));
@@ -413,8 +419,8 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		else if (GoldenGateConstants.CONFIG_FOLDER_NAME.equals(servletPath)) {
 			
 			//	clean data name
-			if (dataName.startsWith("/"))
-				dataName = dataName.substring(1);
+			while (dataName.startsWith("/"))
+				dataName = dataName.substring("/".length());
 			
 			//	request for configuration list
 			if ((dataName.length() == 0) || GoldenGateConfiguration.FILE_INDEX_NAME.equals(dataName)) {
