@@ -10,11 +10,11 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Universität Karlsruhe (TH) nor the
+ *     * Neither the name of the Universitaet Karlsruhe (TH) nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY UNIVERSITÄT KARLSRUHE (TH) AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY UNIVERSITAET KARLSRUHE (TH) AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -37,30 +37,28 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import de.uka.ipd.idaho.gamta.util.ProgressMonitor;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Configuration;
 import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.SpecialDataHandler;
-import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection;
 import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection.Connection;
 import de.uka.ipd.idaho.goldenGateServer.ecs.GoldenGateEcsConstants;
 import de.uka.ipd.idaho.goldenGateServer.uaa.client.AuthenticatedClient;
-import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
-import de.uka.ipd.idaho.goldenGateServer.util.Base64OutputStream;
+import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
+import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 import de.uka.ipd.idaho.stringUtils.StringVector;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 
 /**
  * A client for remotely accessing the editor configuration provided by a
@@ -69,9 +67,6 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  * @author sautter
  */
 public class GoldenGateEcsClient implements GoldenGateEcsConstants {
-	
-	//	TODO switch to binary transfer once ECS update deployed to server
-	
 	private AuthenticatedClient authClient;
 	
 	/** Constructor
@@ -231,7 +226,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	/**
 	 * Retrieve a data item from the GoldenGATE ECS, useful for loading the
 	 * actual data of configurations in circumstances where URLs cannot be used.
-	 * In particular, this is necessary when using a dirct host/port connection
+	 * In particular, this is necessary when using a direct host/port connection
 	 * to the server, without HTTP.
 	 * @param dataName the path (prefixed with the configuration's base path) and
 	 *            name of the data item to fetch
@@ -239,63 +234,23 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 *         from, or null, if the data item does not exist
 	 * @throws IOException
 	 */
-//	public InputStream getData(String dataName) throws IOException {
-//		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
-//		
-//		final Connection con;
-//		try {
-//			con = this.authClient.getConnection();
-//			BufferedLineOutputStream blos = con.getOutputStream();
-//			
-//			blos.writeLine(GET_DATA);
-//			blos.writeLine(this.authClient.getSessionID());
-//			blos.writeLine(dataName);
-//			blos.flush();
-//			
-//			BufferedLineInputStream blis = con.getInputStream();
-//			String error = blis.readLine();
-//			if (GET_DATA.equals(error))
-//				return new FilterInputStream(blis) {
-//					private Connection connection = con;
-//					public void close() throws IOException {
-//						this.connection.close();
-//						this.connection = null;
-//					}
-//					protected void finalize() throws Throwable {
-//						if (this.connection != null)
-//							this.connection.close();
-//					}
-//				};
-//			
-//			else {
-//				con.close();
-//				throw new IOException(error);
-//			}
-//		}
-//		catch (Exception e) {
-//			throw new IOException(e.getMessage());
-//		}
-//	}
 	public InputStream getData(String dataName) throws IOException {
 		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
 		
 		final Connection con;
 		try {
 			con = this.authClient.getConnection();
-			BufferedWriter bw = con.getWriter();
+			BufferedLineOutputStream blos = con.getOutputStream();
 			
-			bw.write(GET_DATA);
-			bw.newLine();
-			bw.write(this.authClient.getSessionID());
-			bw.newLine();
-			bw.write(dataName);
-			bw.newLine();
-			bw.flush();
+			blos.writeLine(GET_DATA);
+			blos.writeLine(this.authClient.getSessionID());
+			blos.writeLine(dataName);
+			blos.flush();
 			
-			BufferedReader br = con.getReader();
-			String error = br.readLine();
+			BufferedLineInputStream blis = con.getInputStream();
+			String error = blis.readLine();
 			if (GET_DATA.equals(error))
-				return new FilterInputStream(new Base64InputStream(br)) {
+				return new FilterInputStream(blis) {
 					private Connection connection = con;
 					public void close() throws IOException {
 						this.connection.close();
@@ -318,6 +273,50 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 	
 	/**
+	 * Retrieve a list of data items from the GoldenGATE ECS, useful for loading
+	 * the actual data of configurations in circumstances where URLs cannot be
+	 * used. In particular, this is necessary when using a direct host/port
+	 * connection to the server, without HTTP.
+	 * @param dataNames an array holding the paths (prefixed with the
+	 *            configuration's base path) and name of the data items to fetch
+	 * @return a ZipInputStream whose entries hold the data items with the
+	 *         specified names from, or null, if the data item does not exist
+	 * @throws IOException
+	 */
+	public ZipInputStream getDatas(String[] dataNames) throws IOException {
+		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
+		
+		final Connection con;
+		try {
+			con = this.authClient.getConnection();
+			BufferedWriter bw = con.getWriter();
+			
+			bw.write(GET_DATAS);
+			bw.newLine();
+			bw.write(this.authClient.getSessionID());
+			bw.newLine();
+			for (int d = 0; d < dataNames.length; d++) {
+				bw.write(dataNames[d]);
+				bw.newLine();
+			}
+			bw.newLine(); // terminate file list with blank line
+			bw.flush();
+			
+			BufferedLineInputStream in = con.getInputStream();
+			String error = in.readLine();
+			if (GET_DATAS.equals(error))
+				return new ZipInputStream(in);
+			else {
+				con.close();
+				throw new IOException(error);
+			}
+		}
+		catch (Exception e) {
+			throw new IOException(e.getMessage());
+		}
+	}
+	
+	/**
 	 * Upload a data item to the GoldenGATE ECS, useful for uploading the actual
 	 * data of configurations after client side modifications. This requires
 	 * administrative privileges and is intended for updating the configuration
@@ -328,67 +327,19 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	 *         to
 	 * @throws IOException
 	 */
-//	public OutputStream updateData(String dataName) throws IOException {
-//		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
-//		
-//		final Connection con;
-//		try {
-//			con = this.authClient.getConnection();
-//			final BufferedLineOutputStream blos = con.getOutputStream();
-//			
-//			blos.writeLine(UPDATE_DATA);
-//			blos.writeLine(this.authClient.getSessionID());
-//			blos.writeLine(dataName);
-//			
-//			return new FilterOutputStream(blos) {
-//				private Connection connection = con;
-//				private boolean unwritten = true;
-//				public void write(int b) throws IOException {
-//					this.unwritten = false;
-//					super.write(b);
-//				}
-//				public void close() throws IOException {
-//					if (this.unwritten) {
-//						blos.write((int) '\r');
-//						blos.write((int) '\n');
-//						System.out.println("Padded empty file upload");
-//					}
-//					blos.newLine();
-//					blos.flush();
-//					BufferedLineInputStream blis = con.getInputStream();
-//					String error = blis.readLine();
-//					if (!UPDATE_DATA.equals(error))
-//						throw new IOException(error);
-//					this.connection.close();
-//					this.connection = null;
-//				}
-//				protected void finalize() throws Throwable {
-//					if (this.connection != null)
-//						this.connection.close();
-//				}
-//			};
-//		}
-//		catch (Exception e) {
-//			throw new IOException(e.getMessage());
-//		}
-//	}
 	public OutputStream updateData(String dataName) throws IOException {
 		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
 		
 		final Connection con;
 		try {
 			con = this.authClient.getConnection();
-			final BufferedWriter bw = con.getWriter();
+			final BufferedLineOutputStream blos = con.getOutputStream();
 			
-			bw.write(UPDATE_DATA);
-			bw.newLine();
-			bw.write(this.authClient.getSessionID());
-			bw.newLine();
-			bw.write(dataName);
-			bw.newLine();
+			blos.writeLine(UPDATE_DATA);
+			blos.writeLine(this.authClient.getSessionID());
+			blos.writeLine(dataName);
 			
-			final Base64OutputStream bos = new Base64OutputStream(bw);
-			return new FilterOutputStream(bos) {
+			return new FilterOutputStream(blos) {
 				private Connection connection = con;
 				private boolean unwritten = true;
 				public void write(int b) throws IOException {
@@ -396,15 +347,15 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 					super.write(b);
 				}
 				public void close() throws IOException {
-					bos.close(false);
 					if (this.unwritten) {
-						bw.write(0);
+						blos.write((int) '\r');
+						blos.write((int) '\n');
 						System.out.println("Padded empty file upload");
 					}
-					bw.newLine();
-					bw.flush();
-					BufferedReader br = con.getReader();
-					String error = br.readLine();
+					blos.newLine();
+					blos.flush();
+					BufferedLineInputStream blis = con.getInputStream();
+					String error = blis.readLine();
 					if (!UPDATE_DATA.equals(error))
 						throw new IOException(error);
 					this.connection.close();
@@ -415,6 +366,72 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 						this.connection.close();
 				}
 			};
+		}
+		catch (Exception e) {
+			throw new IOException(e.getMessage());
+		}
+	}
+	
+	/**
+	 * Upload a data item to the GoldenGATE ECS, useful for uploading the actual
+	 * data of configurations after client side modifications. This requires
+	 * administrative privileges and is intended for updating the configuration
+	 * hosted by the ECS.
+	 * @param dataName the path (prefixed with the configuration's base path) and
+	 *            name of the data item to fetch
+	 * @return an InputStream for writing the data item with the specified name
+	 *         to
+	 * @throws IOException
+	 */
+	public void updateDatas(String configName, String[] dataNames, File basePath, SpecialDataHandler specialData, long configTime, ProgressMonitor pm) throws IOException {
+		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
+		
+		final Connection con;
+		try {
+			con = this.authClient.getConnection();
+			final BufferedLineOutputStream out = con.getOutputStream();
+			
+			out.write(UPDATE_DATAS);
+			out.newLine();
+			out.write(this.authClient.getSessionID());
+			out.newLine();
+			
+			ZipOutputStream zip = new ZipOutputStream(out);
+			for (int f = 0; f < dataNames.length; f++) {
+				File file = new File(basePath, dataNames[f]);
+				InputStream specialSource = ((specialData == null) ? null : specialData.getInputStream(dataNames[f]));
+				
+				pm.setInfo(" - updating " + dataNames[f]);
+				
+				InputStream in = ((specialSource == null) ? new FileInputStream(file) : specialSource);
+				System.out.println("   - got source");
+				ZipEntry ze = new ZipEntry(configName + "/" + dataNames[f]);
+				ze.setTime((specialSource == null) ? file.lastModified() : configTime);
+				zip.putNextEntry(ze);
+				System.out.println("   - got sink");
+				byte[] buffer = new byte[1024];
+				int read;
+				System.out.print("   - sending ");
+				while ((read = in.read(buffer)) != -1) {
+					zip.write(buffer, 0, read);
+					System.out.print(".");
+				}
+				System.out.println();
+				System.out.println("   - data sent");
+				in.close();
+				zip.closeEntry();
+				System.out.println("   - streams closed");
+				
+				pm.setProgress(((f+1) * 100) / dataNames.length);
+			}
+			zip.flush();
+			zip.close();
+			
+			//	read response
+			BufferedReader br = con.getReader();
+			String error = br.readLine();
+			if (!UPDATE_DATAS.equals(error))
+				throw new IOException(error);
 		}
 		catch (Exception e) {
 			throw new IOException(e.getMessage());
@@ -625,6 +642,9 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	public void uploadConfiguration(File basePath, SpecialDataHandler specialData, Configuration config, ProgressMonitor pm) throws IOException {
 		if (!this.authClient.isLoggedIn()) throw new IOException("Not logged in.");
 		
+		if (pm == null)
+			pm = ProgressMonitor.dummy;
+		
 		Connection con = null;
 		try {
 			con = this.authClient.getConnection();
@@ -642,12 +662,12 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 			String error = br.readLine();
 			if (UPLOAD_CONFIGURATION.equals(error)) {
 				long sConfigAge = Long.parseLong(br.readLine());
-				System.out.println("GgEcsClient: receiving server file list");
-				Set sFiles = new HashSet();
+				pm.setStep("GgEcsClient: receiving server file list");
+				HashSet sFiles = new HashSet();
 				String sFile;
 				while (((sFile = br.readLine()) != null) && (sFile.length() != 0)) {
 					sFiles.add(sFile);
-					System.out.println(" - " + sFile);
+					pm.setInfo(" - " + sFile);
 				}
 				con.close();
 				
@@ -656,54 +676,28 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 				String[] files = ConfigurationUtils.getDataNameList(basePath, config);
 				Arrays.sort(files);
 				
+				ArrayList dataNames = new ArrayList();
 				for (int f = 0; f < files.length; f++) {
 					File file = new File(basePath, files[f]);
 					InputStream specialSource = ((specialData == null) ? null : specialData.getInputStream(files[f]));
-					
 					if (specialSource == null) {
 						if (sFiles.contains(files[f]) && (file.lastModified() < lConfigTime)) {
-							System.out.println("GgEcsClient: skipping up-to-date file " + files[f]);
-							if (pm != null) {
-								pm.setInfo("GgEcsClient: skipping up-to-date file " + files[f]);
-								pm.setProgress(((f+1) * 100) / files.length);
-							}
+							pm.setInfo("GgEcsClient: skipping up-to-date file " + files[f]);
+							pm.setProgress(((f+1) * 100) / files.length);
 							continue;
 						}
 						if (!sFiles.contains(files[f]) && (file.length() == 0)) {
-							System.out.println("GgEcsClient: skipping empty file " + files[f]);
-							if (pm != null) {
-								pm.setInfo("GgEcsClient: skipping empty file " + files[f]);
-								pm.setProgress(((f+1) * 100) / files.length);
-							}
+							pm.setInfo("GgEcsClient: skipping empty file " + files[f]);
+							pm.setProgress(((f+1) * 100) / files.length);
 							continue;
 						}
 					}
-					
-					System.out.println("GgEcsClient: updating " + files[f]);
-					if (pm != null)
-						pm.setInfo("GgEcsClient: updating " + files[f]);
-					
-					InputStream in = ((specialSource == null) ? new FileInputStream(file) : specialSource);
-					System.out.println("- got source");
-					OutputStream out = this.updateData(config.name + "/" + files[f]);
-					System.out.println("- got sink");
-					byte[] buffer = new byte[1024];
-					int read;
-					System.out.print("- sending ");
-					while ((read = in.read(buffer)) != -1) {
-						out.write(buffer, 0, read);
-						System.out.print(".");
-					}
-					System.out.println();
-					System.out.println("- data sent");
-					out.flush();
-					out.close();
-					in.close();
-					System.out.println("- streams closed");
-					
-					if (pm != null)
-						pm.setProgress(((f+1) * 100) / files.length);
+					else specialSource.close(); // only for checking here
+					dataNames.add(files[f]);
 				}
+				
+				pm.setStep("GgEcsClient: updating " + dataNames.size() + " of " + files.length + " data items");
+				this.updateDatas(config.name, ((String[]) dataNames.toArray(new String[dataNames.size()])), basePath, specialData, lConfigTime, pm);
 			}
 			else throw new IOException(error);
 		}
@@ -1152,7 +1146,7 @@ public class GoldenGateEcsClient implements GoldenGateEcsConstants {
 	}
 //	
 //	public static void main(String[] args) throws Exception {
-//		AuthenticatedClient ac = AuthenticatedClient.getAuthenticatedClient(ServerConnection.getServerConnection("http://plazi.cs.umb.edu/GgServer/proxy"));
+//		AuthenticatedClient ac = AuthenticatedClient.getAuthenticatedClient(ServerConnection.getServerConnection("http://tb.plazi.org/GgServer/proxy"));
 //		ac.login("", ""); // TODO add credentials for tests
 //		GoldenGateEcsClient ecsc = new GoldenGateEcsClient(ac);
 //		Configuration conf = ecsc.getConfiguration("ServerBatch.imagine");

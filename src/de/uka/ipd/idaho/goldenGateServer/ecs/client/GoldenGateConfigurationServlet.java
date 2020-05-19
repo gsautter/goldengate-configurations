@@ -10,11 +10,11 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Universität Karlsruhe (TH) nor the
+ *     * Neither the name of the Universitaet Karlsruhe (TH) nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY UNIVERSITÄT KARLSRUHE (TH) AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY UNIVERSITAET KARLSRUHE (TH) AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -38,7 +38,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilterReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -68,7 +67,7 @@ import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Resource;
 import de.uka.ipd.idaho.goldenGateServer.client.GgServerClientServlet;
 import de.uka.ipd.idaho.goldenGateServer.client.ServerConnection.Connection;
 import de.uka.ipd.idaho.goldenGateServer.ecs.GoldenGateEcsConstants;
-import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
+import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
 
 /**
  * This servlet is intended to serve configuration data from a backing
@@ -312,7 +311,7 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		return configTray.getDataItemTimestamp(dataName);
 	}
 	
-	private DataInputStream getInputStream(String dataName, final long dataTimestamp) throws IOException {
+	private DataInputStream getInputStream(String dataName, long dataTimestamp) throws IOException {
 		
 		//	data item does not exist
 		if (dataTimestamp == -1)
@@ -350,22 +349,21 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 			bw.newLine();
 			bw.flush();
 			
-			BufferedReader br = con.getReader();
-			String error = br.readLine();
+			BufferedLineInputStream in = con.getInputStream();
+			String error = in.readLine();
 			if (GET_DATA.equals(error)) {
 				File cachingDataFile = new File(this.configDataRoot, (dataName + ".caching"));
 				cachingDataFile.getParentFile().mkdirs();
 				cachingDataFile.createNewFile();
 				
-				InputStream is = new BufferedInputStream(new Base64InputStream(br));
 				OutputStream os = new BufferedOutputStream(new FileOutputStream(cachingDataFile));
 				byte[] inBuf = new byte[1024];
 				int inLen = -1;
-				while ((inLen = is.read(inBuf)) != -1)
+				while ((inLen = in.read(inBuf)) != -1)
 					os.write(inBuf, 0, inLen);
 				os.flush();
 				os.close();
-				is.close();
+				in.close();
 				
 				if (cacheDataFile.exists()) {
 					cacheDataFile.renameTo(new File(this.configDataRoot, (dataName + "." + dataTimestamp + ".old")));
@@ -383,6 +381,57 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		catch (Exception e) {
 			throw new IOException(e.getMessage());
 		}
+//		if ((cacheDataFile.lastModified() + 999) < dataTimestamp) try {
+//			Connection con = this.serverConnection.getConnection();
+//			BufferedWriter bw = con.getWriter();
+//			
+//			bw.write(GET_DATAS);
+//			bw.newLine();
+//			bw.write(CONFIG_SERVLET_SESSION_ID);
+//			bw.newLine();
+//			bw.write(dataName);
+//			bw.newLine();
+//			bw.newLine(); // terminate data name list with blank line
+//			bw.flush();
+//			
+//			BufferedLineInputStream in = con.getInputStream();
+//			String error = in.readLine();
+//			if (GET_DATAS.equals(error)) {
+//				ZipInputStream zip = new ZipInputStream(in);
+//				for (ZipEntry ze; (ze = zip.getNextEntry()) != null;) {
+//					dataName = ze.getName();
+//					dataTimestamp = ze.getTime();
+//					
+//					File cachingDataFile = new File(this.configDataRoot, (dataName + ".caching"));
+//					cachingDataFile.getParentFile().mkdirs();
+//					cachingDataFile.createNewFile();
+//					
+//					OutputStream os = new BufferedOutputStream(new FileOutputStream(cachingDataFile));
+//					byte[] inBuf = new byte[1024];
+//					int inLen = -1;
+//					while ((inLen = in.read(inBuf)) != -1)
+//						os.write(inBuf, 0, inLen);
+//					os.flush();
+//					os.close();
+//					
+//					if (cacheDataFile.exists()) {
+//						cacheDataFile.renameTo(new File(this.configDataRoot, (dataName + "." + dataTimestamp + ".old")));
+//						cacheDataFile = new File(this.configDataRoot, dataName);
+//					}
+//					
+//					cachingDataFile.renameTo(cacheDataFile);
+//					cacheDataFile.setLastModified(dataTimestamp);
+//				}
+//				in.close();
+//			}
+//			else {
+//				con.close();
+//				throw new IOException(error);
+//			}
+//		}
+//		catch (Exception e) {
+//			throw new IOException(e.getMessage());
+//		}
 		
 		//	return cached file
 		return new DataInputStream(cacheDataFile);
@@ -401,7 +450,7 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		//	get invokaltion path and data name
+		//	get invocation path and data name
 		String servletPath = request.getServletPath();
 		if (servletPath.startsWith("/"))
 			servletPath = servletPath.substring(1);
@@ -520,6 +569,7 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 				
 				//	send data to requester
 				else try {
+					
 					//	get data input stream
 					DataInputStream dis = this.getInputStream(dataName, dataTimestamp);
 					

@@ -10,11 +10,11 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Universität Karlsruhe (TH) nor the
+ *     * Neither the name of the Universitaet Karlsruhe (TH) nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY UNIVERSITÄT KARLSRUHE (TH) AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY UNIVERSITAET KARLSRUHE (TH) AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -56,8 +56,14 @@ public interface GoldenGateEcsConstants extends GoldenGateServerConstants {
 	/** the command for obtaining a specific data element of a GoldenGATE Editor configuration from the backing server */
 	public static final String GET_DATA = "ECS_GET_DATA";
 	
+	/** the command for obtaining a series of data elements of a GoldenGATE Editor configuration from the backing server */
+	public static final String GET_DATAS = "ECS_GET_DATAS";
+	
 	/** the command for updating a specific data element of a GoldenGATE Editor configuration on the backing server */
 	public static final String UPDATE_DATA = "ECS_UPDATE_DATA";
+	
+	/** the command for updating a series of data elements of a GoldenGATE Editor configuration on the backing server */
+	public static final String UPDATE_DATAS = "ECS_UPDATE_DATAS";
 	
 	/** the command for deleting a specific data element of a GoldenGATE Editor configuration on the backing server */
 	public static final String DELETE_DATA = "ECS_DELETE_DATA";

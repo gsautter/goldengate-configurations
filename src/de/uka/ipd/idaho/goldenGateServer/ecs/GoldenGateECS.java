@@ -10,11 +10,11 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Universität Karlsruhe (TH) nor the
+ *     * Neither the name of the Universitaet Karlsruhe (TH) nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY UNIVERSITÄT KARLSRUHE (TH) AND CONTRIBUTORS 
+ * THIS SOFTWARE IS PROVIDED BY UNIVERSITAET KARLSRUHE (TH) AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY
@@ -36,7 +36,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -50,6 +49,9 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import de.uka.ipd.idaho.goldenGate.GoldenGateConfiguration;
 import de.uka.ipd.idaho.goldenGate.GoldenGateConstants;
@@ -62,11 +64,11 @@ import de.uka.ipd.idaho.goldenGate.configuration.ConfigurationUtils.Resource;
 import de.uka.ipd.idaho.goldenGateServer.AbstractGoldenGateServerComponent;
 import de.uka.ipd.idaho.goldenGateServer.GoldenGateServerComponentRegistry;
 import de.uka.ipd.idaho.goldenGateServer.uaa.UserAccessAuthority;
+import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
+import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
+import de.uka.ipd.idaho.stringUtils.StringVector;
 //import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
 //import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
-import de.uka.ipd.idaho.goldenGateServer.util.Base64InputStream;
-import de.uka.ipd.idaho.goldenGateServer.util.Base64OutputStream;
-import de.uka.ipd.idaho.stringUtils.StringVector;
 
 /**
  * The GoldenGATE Editor Configuration Server (ECS) provides specialized
@@ -81,9 +83,6 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  * @author sautter
  */
 public class GoldenGateECS extends AbstractGoldenGateServerComponent implements GoldenGateConstants, GoldenGateEcsConstants {
-	
-	//	TODO switch to binary receiving once there is more time for testing
-	
 	private static final String CONFIGURATION_PERMISSION_PREFIX = "ECS.Configuration.";
 	private static final String CONFIGURATION_ALL_PERMISSION_SUFFIX = ".All";
 	private static final String GROUP_PERMISSION_PREFIX = "ECS.Group.";
@@ -291,12 +290,12 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			return config;
 		}
 		catch (FileNotFoundException fnfe) {
-			System.out.println(fnfe.getMessage() + " while loading configuration '" + configName + "'");
-			fnfe.printStackTrace(System.out);
+			this.logError(fnfe.getMessage() + " while loading configuration '" + configName + "'");
+			this.logError(fnfe);
 		}
 		catch (IOException ioe) {
-			System.out.println(ioe.getMessage() + " while loading configuration '" + configName + "'");
-			ioe.printStackTrace(System.out);
+			this.logError(ioe.getMessage() + " while loading configuration '" + configName + "'");
+			this.logError(ioe);
 		}
 		return null;
 	}
@@ -419,8 +418,8 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 			br.close();
 		}
 		catch (IOException ioe) {
-			System.out.println(ioe.getClass().getName() + " (" + ioe.getMessage() + ") while loading group '" + groupName + "'.");
-			ioe.printStackTrace(System.out);
+			this.logError(ioe.getClass().getName() + " (" + ioe.getMessage() + ") while loading group '" + groupName + "'.");
+			this.logError(ioe);
 		}
 		return group;
 	}
@@ -554,86 +553,112 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		
 		//	get data
 		ca = new ComponentActionNetwork() {
-			private static final boolean DEBUG = true;
 			public String getActionCommand() {
 				return GET_DATA;
 			}
-//			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
-//				
-//				//	check authentication
-//				String sessionId = input.readLine();
-//				if (!uaa.isValidSession(sessionId) && !CONFIG_SERVLET_SESSION_ID.equals(sessionId)) {
-//					output.writeLine("Invalid session (" + sessionId + ")");
-//					return;
-//				}
-//				
-//				//	read data name
-//				String dataName = input.readLine();
-//				if (DEBUG) System.out.println("Data name is " + dataName);
-//				
-//				//	create and check data file
-//				File dataFile = new File(dataPath, dataName);
-//				if (dataFile.exists() && dataFile.isFile()) {
-//					if (DEBUG) System.out.println("File is " + dataFile.getAbsolutePath());
-//					
-//					//	indicate data coming
-//					output.writeLine(GET_DATA);
-//					
-//					//	send data
-//					FileInputStream fis = new FileInputStream(dataFile);
-//					byte[] buffer = new byte[1024];
-//					int read;
-//					if (DEBUG) System.out.println("Got streams, start sending");
-//					while ((read = fis.read(buffer)) != -1)
-//						output.write(buffer, 0, read);
-//					if (DEBUG) System.out.println("Data sent");
-//					fis.close();
-//					if (DEBUG) System.out.println("Streams closed");
-//				}
-//				
-//				//	indicate failure
-//				else output.writeLine("Data not found, or it's a directory");
-//			}
-			public void performActionNetwork(BufferedReader input, BufferedWriter output) throws IOException {
+			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
 				
 				//	check authentication
 				String sessionId = input.readLine();
-				if (!uaa.isValidSession(sessionId) && !CONFIG_SERVLET_SESSION_ID.equals(sessionId)) {
-					output.write("Invalid session (" + sessionId + ")");
-					output.newLine();
+				if (!uaa.isValidSession(sessionId) && (!CONFIG_SERVLET_SESSION_ID.equals(sessionId) || host.isRequestProxied())) {
+					output.writeLine("Invalid session (" + sessionId + ")");
 					return;
 				}
 				
 				//	read data name
 				String dataName = input.readLine();
-				if (DEBUG) System.out.println("Data name is " + dataName);
+				logDebug("Data name is " + dataName);
 				
 				//	create and check data file
 				File dataFile = new File(dataPath, dataName);
 				if (dataFile.exists() && dataFile.isFile()) {
-					if (DEBUG) System.out.println("File is " + dataFile.getAbsolutePath());
+					logDebug("File is " + dataFile.getAbsolutePath());
 					
-					//	indicate configuration coming
-					output.write(GET_DATA);
-					output.newLine();
+					//	indicate data coming
+					output.writeLine(GET_DATA);
 					
+					//	send data
 					FileInputStream fis = new FileInputStream(dataFile);
 					byte[] buffer = new byte[1024];
 					int read;
-					Base64OutputStream bos = new Base64OutputStream(output);
-					if (DEBUG) System.out.println("Got streams, start sending");
+					logDebug("Got streams, start sending");
 					while ((read = fis.read(buffer)) != -1)
-						bos.write(buffer, 0, read);
-					if (DEBUG) System.out.println("Data sent");
+						output.write(buffer, 0, read);
+					logDebug("Data sent");
 					fis.close();
-					bos.close(false);
-					if (DEBUG) System.out.println("Streams closed");
+					logDebug("Streams closed");
 				}
 				
 				//	indicate failure
-				else {
-					output.write("Data not found, or it's a directory");
+				else output.writeLine("Data not found, or it's a directory");
+			}
+		};
+		cal.add(ca);
+		
+		//	get multiple data items
+		ca = new ComponentActionNetwork() {
+			public String getActionCommand() {
+				return GET_DATAS;
+			}
+			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
+				
+				//	check authentication
+				String sessionId = input.readLine();
+				if (!uaa.isValidSession(sessionId) && (!CONFIG_SERVLET_SESSION_ID.equals(sessionId) || host.isRequestProxied())) {
+					output.write("Invalid session (" + sessionId + ")");
 					output.newLine();
+					return;
+				}
+				
+				//	read data names
+				logDebug("Reading data names");
+				ArrayList dataNames = new ArrayList();
+				for (String dataName; (dataName = input.readLine()) != null;) {
+					if (dataName.length() == 0)
+						break;
+					dataNames.add(dataName);
+					logDebug(" - " + dataName);
+				}
+				
+				//	check if anything to send
+				if (dataNames.isEmpty()) {
+					output.write("No data names specified, request at least one.");
+					output.newLine();
+					return;
+				}
+				
+				//	indicate configuration coming
+				output.write(GET_DATAS);
+				output.newLine();
+				
+				//	send data items
+				ZipOutputStream zip = new ZipOutputStream(output);
+				logDebug("Sending data");
+				for (int d = 0; d < dataNames.size(); d++) {
+					String dataName = ((String) dataNames.get(d));
+					File dataFile = new File(dataPath, dataName);
+					if (dataFile.exists() && dataFile.isFile()) {
+						logDebug(" - file is " + dataFile.getAbsolutePath());
+						
+						ZipEntry ze = new ZipEntry(dataName);
+						ze.setTime(dataFile.lastModified());
+						zip.putNextEntry(ze);
+						
+						FileInputStream fis = new FileInputStream(dataFile);
+						byte[] buffer = new byte[1024];
+						int read;
+						logDebug("   - got streams, start sending");
+						while ((read = fis.read(buffer)) != -1)
+							zip.write(buffer, 0, read);
+						logDebug("   - data sent");
+						fis.close();
+						zip.flush();
+						zip.closeEntry();
+						logDebug("   - streams closed");
+					}
+					
+					//	indicate failure
+					else logWarning("Cannot send directory: " + dataName);
 				}
 			}
 		};
@@ -641,58 +666,65 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		
 		//	update data
 		ca = new ComponentActionNetwork() {
-			private static final boolean DEBUG = true;
 			public String getActionCommand() {
 				return UPDATE_DATA;
 			}
-//			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
-//				
-//				//	check authentication
-//				String sessionId = input.readLine();
-//				if (!uaa.isValidSession(sessionId)) {
-//					output.writeLine("Invalid session (" + sessionId + ")");
-//					return;
-//				}
-//				else if (!uaa.isAdminSession(sessionId)) {
-//					output.writeLine("Administrative privileges required");
-//					return;
-//				}
-//				
-//				//	read data name
-//				String dataName = input.readLine();
-//				if (DEBUG) System.out.println("Data name is " + dataName);
-//				
-//				//	create and check data file
-//				File dataFile = new File(dataPath, dataName);
-//				
-//				//	data file exists, make way
-//				if (dataFile.exists()) {
-//					if (dataFile.isFile())
-//						dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
-//					else {
-//						output.writeLine("Cannot write to directory");
-//						return;
-//					}
-//				}
-//				if (dataFile.getParentFile() != null)
-//					dataFile.getParentFile().mkdirs();
-//				dataFile.createNewFile();
-//				if (DEBUG) System.out.println("File created");
-//				
-//				//	receive data
-//				FileOutputStream fos = new FileOutputStream(dataFile, true);
-//				if (DEBUG) System.out.println("Got streams");
-//				byte[] buffer = new byte[1024];
-//				for (int read; (read = input.read(buffer)) != -1;)
-//					fos.write(buffer, 0, read);
-//				if (DEBUG) System.out.println("Data read");
-//				fos.flush();
-//				fos.close();
-//				
-//				if (DEBUG) System.out.println("Done");
-//				output.writeLine(UPDATE_DATA);
-//			}
-			public void performActionNetwork(BufferedReader input, BufferedWriter output) throws IOException {
+			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
+				
+				//	check authentication
+				String sessionId = input.readLine();
+				if (!uaa.isValidSession(sessionId)) {
+					output.writeLine("Invalid session (" + sessionId + ")");
+					return;
+				}
+				else if (!uaa.isAdminSession(sessionId)) {
+					output.writeLine("Administrative privileges required");
+					return;
+				}
+				
+				//	read data name
+				String dataName = input.readLine();
+				logDebug("Data name is " + dataName);
+				
+				//	create and check data file
+				File dataFile = new File(dataPath, dataName);
+				
+				//	data file exists, make way
+				if (dataFile.exists()) {
+					if (dataFile.isFile())
+						dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
+					else {
+						output.writeLine("Cannot write to directory");
+						return;
+					}
+				}
+				if (dataFile.getParentFile() != null)
+					dataFile.getParentFile().mkdirs();
+				dataFile.createNewFile();
+				logDebug("File created");
+				
+				//	receive data
+				FileOutputStream fos = new FileOutputStream(dataFile, true);
+				logDebug("Got streams");
+				byte[] buffer = new byte[1024];
+				for (int read; (read = input.read(buffer)) != -1;)
+					fos.write(buffer, 0, read);
+				logDebug("Data read");
+				fos.flush();
+				fos.close();
+				
+				logDebug("Done");
+				output.writeLine(UPDATE_DATA);
+			}
+		};
+		cal.add(ca);
+		
+		//	update multiple data items
+		ca = new ComponentActionNetwork() {
+			public String getActionCommand() {
+				return UPDATE_DATAS;
+			}
+			public void performActionNetwork(BufferedLineInputStream input, BufferedLineOutputStream output) throws IOException {
 				
 				//	check authentication
 				String sessionId = input.readLine();
@@ -707,53 +739,47 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					return;
 				}
 				
-				//	read data name
-				String dataName = input.readLine();
-				if (DEBUG) System.out.println("Data name is " + dataName);
-				
-				//	create and check data file
-				File dataFile = new File(dataPath, dataName);
-				
-				//	data file exists, make way
-				if (dataFile.exists()) {
-					if (dataFile.isFile())
-						dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
-					else {
-						output.write("Cannot write to directory");
-						output.newLine();
-						return;
-					}
-				}
-				if (dataFile.getParentFile() != null)
-					dataFile.getParentFile().mkdirs();
-				dataFile.createNewFile();
-				if (DEBUG) System.out.println("File created");
-				
-				//	create streams
-				Base64InputStream bis = new Base64InputStream(new FilterReader(input) {
-					boolean gotFirst = false;
-					public int read() throws IOException {
-						int i = super.read();
-						if (i == 0) return -1;
-						if (this.gotFirst) return ((i < 33) ? -1 : i);
-						else if (i < 33) return this.read();
+				//	use ZIP input stream
+				logDebug("Receiving data");
+				ZipInputStream zip = new ZipInputStream(input);
+				for (ZipEntry ze; (ze = zip.getNextEntry()) != null;) {
+					
+					//	read data name
+					String dataName = ze.getName();
+					logDebug(" - name is " + dataName);
+					
+					//	create and check data file
+					File dataFile = new File(dataPath, dataName);
+					
+					//	data file exists, make way
+					if (dataFile.exists()) {
+						if (dataFile.isFile())
+							dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
 						else {
-							this.gotFirst = true;
-							return i;
+							logWarning("Cannot write to directory: " + dataName);
+							continue;
 						}
 					}
-				});
-				FileOutputStream fos = new FileOutputStream(dataFile, true);
-				if (DEBUG) System.out.println("Got streams");
-				byte[] buffer = new byte[1024];
-				for (int read; (read = bis.read(buffer)) != -1;)
-					fos.write(buffer, 0, read);
-				if (DEBUG) System.out.println("Data read");
-				fos.flush();
-				fos.close();
+					if (dataFile.getParentFile() != null)
+						dataFile.getParentFile().mkdirs();
+					dataFile.createNewFile();
+					logDebug("   - file created");
+					
+					//	read and store data
+					FileOutputStream fos = new FileOutputStream(dataFile, true);
+					logDebug("   - got streams");
+					byte[] buffer = new byte[1024];
+					for (int read; (read = zip.read(buffer)) != -1;)
+						fos.write(buffer, 0, read);
+					logDebug("   - data read");
+					fos.flush();
+					fos.close();
+					dataFile.setLastModified(ze.getTime());
+				}
 				
-				if (DEBUG) System.out.println("Done");
-				output.write(UPDATE_DATA);
+				//	report success
+				logDebug("Done");
+				output.write(UPDATE_DATAS);
 				output.newLine();
 			}
 		};
@@ -761,7 +787,6 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		
 		//	delete data
 		ca = new ComponentActionNetwork() {
-			private static final boolean DEBUG = false;
 			public String getActionCommand() {
 				return DELETE_DATA;
 			}
@@ -782,15 +807,15 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	read data name
 				String dataName = input.readLine();
-				if (DEBUG) System.out.println("Data name is " + dataName);
+				logDebug("Data name is " + dataName);
 				
 				//	create and check data file
 				File dataFile = new File(dataPath, dataName);
 				if (dataFile.exists() && dataFile.isFile()) {
-					if (DEBUG) System.out.println("File is " + dataFile.getAbsolutePath());
+					logDebug("File is " + dataFile.getAbsolutePath());
 					
 					dataFile.renameTo(new File(dataFile.getAbsolutePath() + "." + System.currentTimeMillis() + ".old"));
-					if (DEBUG) System.out.println("File deleted");
+					logDebug("File deleted");
 					
 					//	indicate configuration coming
 					output.write(DELETE_DATA);
@@ -816,7 +841,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	check authentication (bypassing UAA for descriptor requests from config servlet)
 				String sessionId = input.readLine();
-				if (CONFIG_SERVLET_SESSION_ID.equals(sessionId)) {}
+				if (CONFIG_SERVLET_SESSION_ID.equals(sessionId) && !host.isRequestProxied()) {}
 				else if (!uaa.isValidSession(sessionId)) {
 					output.write("Invalid session (" + sessionId + ")");
 					output.newLine();
@@ -857,7 +882,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	check authentication (bypassing UAA for descriptor requests from config servlet)
 				String sessionId = input.readLine();
-				if (CONFIG_SERVLET_SESSION_ID.equals(sessionId)) {}
+				if (CONFIG_SERVLET_SESSION_ID.equals(sessionId) && !host.isRequestProxied()) {}
 				else if (!uaa.isValidSession(sessionId)) {
 					output.write("Invalid session (" + sessionId + ")");
 					output.newLine();
@@ -872,7 +897,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				//	get configuration name
 				String configName = input.readLine();
 				if ("".equals(configName)) configName = null;
-				System.out.println("Config name is '" + configName + "'");
+				logDebug("Config name is '" + configName + "'");
 				
 				if (CONFIG_SERVLET_SESSION_ID.equals(sessionId) && !onlineConfigurations.contains(configName)) {
 					output.write("Configuration '" + configName + "' is not an online configuration");
@@ -882,28 +907,27 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	get configuration
 				Configuration config = ((configName == null) ? masterConfiguration : getConfiguration(configName));
-				System.out.println("  config fetched");
+				logDebug("  config fetched");
 				
 				//	indicate missing configuration
 				if (config == null) {
-					System.out.println("  config not found");
+					logDebug("  config not found");
 					output.write("Configuration not found.");
 					output.newLine();
 				}
 				
 				else {
-					System.out.println("  config found");
+					logDebug("  config found");
 					
 					//	indicate configuration coming
 					output.write(GET_CONFIGURATION_DESCRIPTOR);
 					output.newLine();
-					
-					System.out.println("  sending descriptor");
+					logDebug("  sending descriptor");
 					
 					//	send configuration
 					config.writeXml(output);
 					output.newLine();
-					System.out.println("  descriptor sent");
+					logDebug("  descriptor sent");
 				}
 			}
 		};
@@ -928,11 +952,11 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					output.newLine();
 					return;
 				}
-				System.out.println("Updating configuration ...");
+				logDebug("Updating configuration ...");
 				
 				//	get configuration name
 				String configName = input.readLine();
-				System.out.println("  config name is " + configName);
+				logDebug("  config name is " + configName);
 				Configuration config = getConfiguration(configName);
 				if ((config != null) && (config.name.equals(config.basePath))) {
 					output.write("Cannot update materialized configuration.");
@@ -942,7 +966,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 				
 				//	get base configuration
 				String baseConfigName = input.readLine();
-				System.out.println("  base config name is " + baseConfigName);
+				logDebug("  base config name is " + baseConfigName);
 				Configuration baseConfig = getConfiguration(baseConfigName);
 				if (baseConfig == null) {
 					output.write("The specified base configuration does not exist.");
@@ -960,11 +984,11 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					else if (pluginOrResourceName.startsWith("R:"))
 						resourceNameSet.add(pluginOrResourceName.substring(2));
 				}
-				System.out.println("  got resources and plugins");
+				logDebug("  got resources and plugins");
 				
 				//	create or update projected configuration
 				updateConfiguration(configName, baseConfig, pluginNameSet, resourceNameSet);
-				System.out.println("  update done");
+				logDebug("  update done");
 				
 				//	indicate success
 				output.write(UPDATE_CONFIGURATION);
@@ -1036,7 +1060,7 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 					output.newLine();
 					return;
 				}
-				System.out.println("Receiving configuration ...");
+				logDebug("Receiving configuration ...");
 				
 				//	remember receive time
 				long receiveTime = System.currentTimeMillis();
@@ -1329,7 +1353,6 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		return ((ComponentAction[]) cal.toArray(new ComponentAction[cal.size()]));
 	}
 	
-//	private abstract class ListAction implements ComponentActionNetwork {
 	private abstract class ListAction extends ComponentActionNetwork {
 		private String actionCommand;
 		ListAction(String actionCommand) {
@@ -1377,7 +1400,6 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		abstract String[] getList() throws IOException;
 	}
 	
-//	private abstract class GetGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
 	private abstract class GetGroupsOrPluginsOrResourcesAction extends ComponentActionNetwork {
 		private String actionCommand;
 		GetGroupsOrPluginsOrResourcesAction(String actionCommand) {
@@ -1428,7 +1450,6 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 		abstract String[] getGroupsOrPluginsOrResources(String groupName) throws IOException;
 	}
 	
-//	private abstract class ModifyGroupsOrPluginsOrResourcesAction implements ComponentActionNetwork {
 	private abstract class ModifyGroupsOrPluginsOrResourcesAction extends ComponentActionNetwork {
 		private String actionCommand;
 		ModifyGroupsOrPluginsOrResourcesAction(String actionCommand) {
