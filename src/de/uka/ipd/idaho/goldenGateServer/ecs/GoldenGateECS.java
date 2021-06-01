@@ -67,8 +67,6 @@ import de.uka.ipd.idaho.goldenGateServer.uaa.UserAccessAuthority;
 import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
 import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 import de.uka.ipd.idaho.stringUtils.StringVector;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineInputStream;
-//import de.uka.ipd.idaho.goldenGateServer.util.BufferedLineOutputStream;
 
 /**
  * The GoldenGATE Editor Configuration Server (ECS) provides specialized
@@ -97,6 +95,27 @@ public class GoldenGateECS extends AbstractGoldenGateServerComponent implements 
 	private UserAccessAuthority uaa = null;
 	
 	private File configBasePath;
+	
+	/*
+TODO rename GGC (GoldenGATE Configuration Service):
+- serves GGI docufigurations just same
+==> Editor Configuration Service not fitting anymore
+
+TODO Figure out how to derive configuration UUIDs from names:
+- need them as data object IDs, after all
+- MD5 of name might do
+
+TODO Store configurations as folder based objects:
+- figure out how to handle sub folders
+  ==> might have to extend IKS to facilitate that (especially folder reorganization)
+- figure out how to keep config name
+- switch to hash based versioning (akin to IMD)
+- store hashes in configuration.xml
+
+TODO Start publishing update and deletion events
+==> facilitates replication across node cluster
+==> makes configurations first class versioned citizens (akin to document style templates)
+	 */
 	
 	/** Constructor passing 'ECS' as the letter code to super constructor
 	 */

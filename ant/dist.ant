@@ -22,11 +22,11 @@
 		<jar destfile="${jar.ecs.component}" manifest="${file.home}/MANIFEST.components.MF">
 			<fileset dir="${build.home}/classes">
 				<include name="**/goldenGateServer/ecs/*.class" />
-				<include name="**/goldenGateServer/ecs/client/*.class" />
+				<!-- include name="**/goldenGateServer/ecs/client/*.class" / -->
 			</fileset>
 			<fileset dir="${src.home}">
 				<include name="**/goldenGateServer/ecs/*.java" />
-				<include name="**/goldenGateServer/ecs/client/*.java" />
+				<!-- include name="**/goldenGateServer/ecs/client/*.java" / -->
 			</fileset>
 			<fileset dir="." includes="LICENSE.txt"/>
 		</jar>
