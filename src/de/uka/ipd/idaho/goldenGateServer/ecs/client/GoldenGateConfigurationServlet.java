@@ -112,7 +112,8 @@ public class GoldenGateConfigurationServlet extends GgServerClientServlet implem
 		//	get configuration data location
 		String configDataLocation = this.getSetting("configDataLocation");
 		if (configDataLocation == null)
-			this.configDataRoot = new File(new File(this.webInfFolder, "caches"), GoldenGateConstants.CONFIG_FOLDER_NAME);
+//			this.configDataRoot = new File(new File(this.webInfFolder, "caches"), GoldenGateConstants.CONFIG_FOLDER_NAME);
+			this.configDataRoot = new File(this.cacheRootFolder, GoldenGateConstants.CONFIG_FOLDER_NAME);
 		else this.configDataRoot = new File(configDataLocation);
 	}
 	
